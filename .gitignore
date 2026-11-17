@@ -1,0 +1,10 @@
+# Lokale Archiso-Builds
+/work/
+/out/
+/build/
+/iso/work/
+/iso/out/
+*.iso
+
+# Lokale Test-VMs
+*.qcow2
