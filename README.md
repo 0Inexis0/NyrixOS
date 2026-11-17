@@ -1,4 +1,4 @@
-# NyrixOS
+# ![NyrixOS — Arch Linux + Hyprland](assets/nyrix-banner.svg)
 
 NyrixOS is an Arch Linux-based distribution in early development with a preconfigured Hyprland desktop.
 
