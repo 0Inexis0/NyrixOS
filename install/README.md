@@ -1,3 +1,3 @@
-# NyrixOS auf bestehendem Arch Linux
+# NyrixOS on Arch Linux
 
-Hier entsteht ein Skript, das Hyprland und die NyrixOS-Desktopkonfiguration auf einem vorhandenen Arch-System einrichtet. Eine Neuinstallation soll dafür nicht nötig sein.
+The planned install script will set up Hyprland and the NyrixOS desktop on an existing Arch Linux system without requiring a fresh install.

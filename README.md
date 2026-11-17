@@ -1,15 +1,10 @@
 # NyrixOS
 
-NyrixOS ist eine geplante Linux-Distribution auf Basis von Arch Linux mit einem vorkonfigurierten Hyprland-Desktop.
+NyrixOS is an Arch Linux-based distribution in early development with a preconfigured Hyprland desktop.
 
-Du sollst NyrixOS auf zwei Wegen nutzen können:
+We plan to offer two ways to use NyrixOS:
 
-- **Frisch installieren:** Die ISO vom USB-Stick starten, den Desktop ausprobieren und NyrixOS installieren.
-- **Arch schon installiert?** Den gleichen Desktop per Installationsskript einrichten.
+- **Starting fresh?** Boot the [live ISO](iso/) from a USB drive, try the desktop, and install NyrixOS.
+- **Already running Arch Linux?** Use the [install script](install/) to set up the same desktop on your existing system.
 
-Das Projekt ist im Aufbau. Eine ISO und ein ausführbares Installationsskript stehen noch aus.
-
-## Projektaufbau
-
-- [ISO](iso/) – hier entsteht das Archiso-Profil für den USB-Stick.
-- [Installationsskript](install/) – hier entsteht die Einrichtung für vorhandene Arch-Systeme.
+Neither the ISO nor the install script is available yet.
