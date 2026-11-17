@@ -1,14 +1,19 @@
-# ![NyrixOS — Arch Linux + Hyprland](assets/nyrix-banner.svg)
+<div align="center">
+
+<img src="assets/nyrix-logo.svg" width="96" alt="NyrixOS logo">
+
+# NyrixOS
+
+**A preconfigured Hyprland desktop built on Arch Linux.**
 
 [![Stars](https://img.shields.io/github/stars/0Inexis0/NyrixOS?style=flat-square&label=Stars&labelColor=212544&color=a7ede1)](https://github.com/0Inexis0/NyrixOS/stargazers)
 [![Commits](https://img.shields.io/github/commit-activity/t/0Inexis0/NyrixOS/main?style=flat-square&label=Commits&labelColor=212544&color=ada3fa)](https://github.com/0Inexis0/NyrixOS/commits/main/)
 [![Last commit](https://img.shields.io/github/last-commit/0Inexis0/NyrixOS/main?style=flat-square&label=Last%20commit&labelColor=212544&color=a7ede1)](https://github.com/0Inexis0/NyrixOS/commits/main/)
 
-NyrixOS is an Arch Linux-based distribution in early development with a preconfigured Hyprland desktop.
+[**Live ISO**](iso/) · [Install script](install/) · [Releases](https://github.com/0Inexis0/NyrixOS/releases)
 
-We plan to offer two ways to use NyrixOS:
+</div>
 
-- **Starting fresh?** Boot the [live ISO](iso/) from a USB drive, try the desktop, and install NyrixOS.
-- **Already running Arch Linux?** Use the [install script](install/) to set up the same desktop on your existing system.
+## Project status
 
-Neither the ISO nor the install script is available yet.
+NyrixOS is in early development. We’re working toward a bootable ISO for fresh installs and a setup script for existing Arch systems. Neither is available yet.
