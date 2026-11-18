@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+case "${1:-}" in
+  island) exec quickshell -c nyrix ipc call control island ;;
+  wifi|bluetooth|volume|network) exec quickshell -c nyrix ipc call control menu "$1" ;;
+  "") exec quickshell -c nyrix ipc call control toggle ;;
+  *) exit 2 ;;
+esac

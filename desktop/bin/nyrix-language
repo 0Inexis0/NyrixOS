@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+case ${1:-} in de) locale=de_DE.UTF-8 ;; en) locale=en_US.UTF-8 ;; *) exit 2 ;; esac
+mkdir -p "$HOME/.config/nyrix" "$HOME/.config/environment.d"
+printf '%s\n' "$1" > "$HOME/.config/nyrix/language"
+printf 'LANG=%s\n' "$locale" > "$HOME/.config/nyrix/locale"
+printf 'LANG=%s\n' "$locale" > "$HOME/.config/environment.d/60-nyrix-language.conf"
+if [[ -n ${XDG_RUNTIME_DIR:-} ]]; then
+    nyrix-waybar --render
+    pkill -USR2 -u "$(id -u)" -x waybar || true
+fi

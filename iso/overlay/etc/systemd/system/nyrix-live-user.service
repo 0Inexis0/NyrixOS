@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare the NyrixOS live user
+Before=getty@tty1.service
+After=systemd-sysusers.service
+ConditionPathExists=/run/archiso
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nyrix-live-user
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

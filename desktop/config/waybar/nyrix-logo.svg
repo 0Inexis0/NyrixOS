@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -16 229 216" role="img" aria-labelledby="title">
+  <title id="title">NyrixOS</title>
+  <defs>
+    <linearGradient id="fold" x2="0.85" y2="1">
+      <stop stop-color="#bdfff0"/>
+      <stop offset=".47" stop-color="#93d9e4"/>
+      <stop offset="1" stop-color="#aea1ff"/>
+    </linearGradient>
+  </defs>
+  <path d="M0 184 42 0h50L50 184Z" fill="#93e2d7"/>
+  <path d="M121 184 163 0h50l-42 184Z" fill="#ada3fa"/>
+  <path d="M42 0h50l79 184h-50Z" fill="url(#fold)"/>
+</svg>

@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import json, pathlib, sys, urllib.request
+english = len(sys.argv) > 1 and sys.argv[1] == 'en'
+def say(de, en): print(en if english else de)
+state=pathlib.Path('/var/lib/nyrixos')
+installed=(state/'installed-commit').read_text().strip() if (state/'installed-commit').exists() else ''
+say('Installiert: '+(installed[:12] or 'lokaler Entwicklungsstand'), 'Installed: '+(installed[:12] or 'local development build'))
+try:
+    def get(path):
+        request=urllib.request.Request('https://api.github.com/repos/0Inexis0/NyrixOS/'+path,headers={'User-Agent':'NyrixOS-updater','Accept':'application/vnd.github+json'})
+        with urllib.request.urlopen(request, timeout=12) as response: return json.load(response)
+    latest=get('commits/main')['sha']
+    try:
+        get('contents/install/install.sh?ref='+latest)
+        say('NyrixOS ist aktuell.' if latest == installed else 'Neuer NyrixOS-Stand verfügbar.', 'NyrixOS is up to date.' if latest == installed else 'New NyrixOS revision available.')
+    except Exception:
+        say('Der installierbare NyrixOS-Stand ist noch nicht auf GitHub veröffentlicht. Update wird ohne Änderungen abgebrochen.', 'The installable NyrixOS build is not published on GitHub yet. Updating will stop without changes.')
+    say('\nChangelog (Git-Committexte):','\nChangelog (Git commit messages):')
+    for entry in get('commits?sha='+latest+'&per_page=12'):
+        print(entry['sha'][:8]+' '+entry['commit']['message'].splitlines()[0])
+except Exception as error:
+    say('Updateprüfung fehlgeschlagen: '+str(error),'Update check failed: '+str(error))
+    sys.exit(1)
+say('\nArch-Pakete werden beim Update mit pacman -Syu geprüft.', '\nArch packages are checked during update with pacman -Syu.')
+if (state/'update.log').exists():
+    say('\nLetzter Update-Lauf (Auszug):','\nLast update run (excerpt):')
+    print((state/'update.log').read_text(errors='replace')[-1800:])

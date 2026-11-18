@@ -8,3 +8,5 @@
 
 # Local test VMs
 *.qcow2
+__pycache__/
+*.pyc

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Fixed JSON labels only: never interpolate device names or other external text.
+set -u
+language=de
+[[ ! -r $HOME/.config/nyrix/language ]] || read -r language < "$HOME/.config/nyrix/language"
+export LC_ALL=C
+state=unavailable
+case "${1:-}" in
+  wifi)
+    devices=$(timeout 2 nmcli -t -f TYPE,STATE device 2>/dev/null) || devices=''
+    if ! grep -q '^wifi:' <<< "$devices"; then
+      label='WLAN · Kein Adapter vorhanden'
+    elif [[ $(timeout 2 nmcli radio wifi 2>/dev/null) != enabled ]]; then
+      state=off; label='WLAN ausgeschaltet'
+    elif grep -q '^wifi:connected' <<< "$devices"; then
+      state=connected; label='WLAN verbunden'
+    else
+      state=on; label='WLAN eingeschaltet · Nicht verbunden'
+    fi
+    ;;
+  bluetooth)
+    label='Bluetooth · Kein Adapter vorhanden'
+    for adapter in /sys/class/bluetooth/hci*; do
+      [[ -e $adapter ]] || continue
+      name=${adapter##*/}
+      powered=$(timeout 2 busctl --system get-property org.bluez "/org/bluez/$name" org.bluez.Adapter1 Powered 2>/dev/null) || powered=''
+      if [[ $powered == 'b true' ]]; then
+        state=on; label='Bluetooth eingeschaltet'; break
+      elif [[ $powered == 'b false' ]]; then
+        state=off; label='Bluetooth ausgeschaltet'
+      elif [[ $state == unavailable ]]; then
+        label='Bluetooth · Adapter vorhanden, Dienst nicht erreichbar'
+      fi
+    done
+    ;;
+  *) exit 2 ;;
+esac
+if [[ $language == en ]]; then
+    case $label in
+        'WLAN · Kein Adapter vorhanden') label='Wi-Fi · No adapter' ;;
+        'WLAN ausgeschaltet') label='Wi-Fi off' ;;
+        'WLAN verbunden') label='Wi-Fi connected' ;;
+        'WLAN eingeschaltet · Nicht verbunden') label='Wi-Fi on · Not connected' ;;
+        'Bluetooth · Kein Adapter vorhanden') label='Bluetooth · No adapter' ;;
+        'Bluetooth eingeschaltet') label='Bluetooth on' ;;
+        'Bluetooth ausgeschaltet') label='Bluetooth off' ;;
+        'Bluetooth · Adapter vorhanden, Dienst nicht erreichbar') label='Bluetooth · Service unavailable' ;;
+    esac
+fi
+printf '{"text":" ","class":"%s","tooltip":"%s"}\n' "$state" "$label"

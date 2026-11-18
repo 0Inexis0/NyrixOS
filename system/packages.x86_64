@@ -1,0 +1,13 @@
+base
+linux
+mkinitcpio
+linux-firmware
+amd-ucode
+intel-ucode
+sudo
+networkmanager
+hyprland
+foot
+mesa
+xorg-xwayland
+ttf-dejavu

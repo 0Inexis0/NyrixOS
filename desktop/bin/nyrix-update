@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Root-owned entry point; never run a user-writable checkout as root.
+set -euo pipefail
+export PATH=/usr/bin:/bin LC_ALL=C
+[[ $EUID == 0 ]] || { echo 'Run with sudo / Mit sudo starten'; exit 1; }
+user=${SUDO_USER:-}
+[[ -n $user && $user != root ]] || { echo 'Run from the desktop user with sudo.'; exit 1; }
+[[ -e /etc/arch-release && ! -d /run/archiso ]] || { echo 'Installed Arch system required; not the live ISO.'; exit 1; }
+exec 9>/run/nyrix-update.lock
+flock -n 9 || { echo 'An update is already running / Update läuft bereits'; exit 1; }
+state=/var/lib/nyrixos
+install -d -m755 "$state"
+log=$state/update.log
+exec > >(tee "$log") 2>&1
+trap 'echo "FAILED / FEHLGESCHLAGEN: line $LINENO. See /var/lib/nyrixos/update.log"' ERR
+work=$(mktemp -d "$state/staging.XXXXXXXX")
+trap 'rm -rf -- "$work"' EXIT
+# A fresh root-only clone also avoids local hooks, remote changes and stale branches.
+echo 'Fetching NyrixOS main / Lade NyrixOS main …'
+timeout 180 git -c core.hooksPath=/dev/null clone --quiet --depth=50 --branch main --single-branch https://github.com/0Inexis0/NyrixOS.git "$work/repo"
+repo=$work/repo
+for path in install/install.sh desktop/apply-user-config.sh system/packages.x86_64 desktop/packages.x86_64; do
+    [[ -f $repo/$path && ! -L $repo/$path ]] || { echo 'NyrixOS release not published yet / NyrixOS-Stand noch nicht veröffentlicht. No changes / Keine Änderungen.'; exit 1; }
+done
+if find "$repo/desktop" "$repo/system" "$repo/install" -type l -print -quit | grep -q .; then
+    echo 'Unsupported symlink in update payload'; exit 1
+fi
+commit=$(git -C "$repo" rev-parse HEAD)
+echo "NyrixOS $commit"
+git -C "$repo" --no-pager log -8 --format='%h %s'
+echo 'Arch full upgrade + NyrixOS defaults. Existing files are backed up.'
+echo 'Arch-Vollupdate + NyrixOS-Standarddateien. Bestehende Dateien werden gesichert.'
+read -r -p 'Continue / Fortfahren? [y/N] ' answer
+[[ $answer == y || $answer == Y ]] || exit 0
+# Installer performs pacman -Syu, preserving its normal package confirmations.
+NYRIX_UPDATE=1 bash "$repo/install/install.sh" --user "$user"
+printf '%s\n' "$commit" > "$state/installed-commit"
+git -C "$repo" --no-pager log -20 --format='%h %s' > "$state/changelog"
+echo 'SUCCESS / ERFOLGREICH. Sign out/in; reboot if kernel updated / Neu anmelden; nach Kernelupdate neu starten.'

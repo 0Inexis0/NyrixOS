@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -uo pipefail
+sudo /usr/local/bin/nyrix-update
+result=$?
+printf '\nExit status: %s · Enter to close / Eingabe zum Schließen\n' "$result"
+read -r _
+exit "$result"

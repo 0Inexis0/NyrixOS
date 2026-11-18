@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+: "${XDG_RUNTIME_DIR:?Run inside your graphical user session}"
+exec 9>"$XDG_RUNTIME_DIR/nyrix-desktop.lock"
+flock -n 9 || exit 0
+state=${XDG_STATE_HOME:-$HOME/.local/state}/nyrix
+mkdir -p "$state"
+nyrix-waybar >>"$state/waybar.log" 2>&1 &
+bar=$!
+quickshell -c nyrix >>"$state/quickshell.log" 2>&1 &
+shell=$!
+trap 'kill "$bar" "$shell" 2>/dev/null || true' EXIT
+trap 'exit 0' TERM INT
+wait

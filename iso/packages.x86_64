@@ -1,0 +1,10 @@
+# Live-only additions; system/packages.x86_64 is included automatically.
+mkinitcpio-archiso
+arch-install-scripts
+qemu-guest-agent
+parted
+gptfdisk
+dosfstools
+e2fsprogs
+squashfs-tools
+archinstall

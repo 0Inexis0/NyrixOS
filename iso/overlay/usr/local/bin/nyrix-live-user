@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if ! id nyrix >/dev/null 2>&1; then
+    useradd --create-home --uid 1000 --groups wheel,video,audio --shell /bin/bash nyrix
+    passwd --delete nyrix
+fi
+# Local live session only. SSH is not enabled in the public image.
+passwd --lock root

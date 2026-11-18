@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""Read-only host metrics, opt-in city weather and local account quota adapters."""
+import datetime, json, math, os, pathlib, selectors, shutil, subprocess, sys, tempfile, time, urllib.parse, urllib.request
+HOME=pathlib.Path.home()
+CONFIG=HOME/'.config/nyrix'
+CACHE=HOME/'.cache/nyrix/island'
+def save(path,data):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode='w',dir=path.parent,delete=False) as f:
+        json.dump(data,f);name=f.name
+    os.replace(name,path)
+def read(path,default=None):
+    try:return json.loads(path.read_text())
+    except (OSError,ValueError):return default
+def fetch(url,params):
+    req=urllib.request.Request(url+'?'+urllib.parse.urlencode(params),headers={'User-Agent':'NyrixOS/0.1'})
+    with urllib.request.urlopen(req,timeout=10) as r:return json.load(r)
+def number(path,scale=1):
+    try:return float(path.read_text().strip())/scale
+    except (OSError,ValueError):return None
+def cpu_times():
+    v=list(map(int,pathlib.Path('/proc/stat').read_text().splitlines()[0].split()[1:9]));return sum(v),v[3]+v[4]
+def metrics():
+    a=cpu_times();time.sleep(.25);b=cpu_times();delta=b[0]-a[0]
+    cpu=round(100*(1-(b[1]-a[1])/delta),1) if delta>0 else None
+    mem={x.split(':')[0]:int(x.split()[1])*1024 for x in pathlib.Path('/proc/meminfo').read_text().splitlines()}
+    disk=shutil.disk_usage('/')
+    temps=[]
+    for hw in pathlib.Path('/sys/class/hwmon').glob('hwmon*'):
+        try:name=(hw/'name').read_text().strip()
+        except OSError:continue
+        if name in ['coretemp','k10temp','zenpower','cpu_thermal']:
+            temps += [v for p in hw.glob('temp*_input') if (v:=number(p,1000)) is not None and -20<v<150]
+    gpus=[]
+    for card in pathlib.Path('/sys/class/drm').glob('card[0-9]*'):
+        if '-' in card.name:continue
+        dev=card/'device'
+        if not dev.exists():continue
+        try:driver=(dev/'driver').resolve().name
+        except OSError:driver='GPU'
+        temp=[v for p in (dev/'hwmon').glob('hwmon*/temp*_input') if (v:=number(p,1000)) is not None]
+        gpus.append({'name':driver,'usage':number(dev/'gpu_busy_percent'),'temperature':max(temp) if temp else None})
+    if shutil.which('nvidia-smi'):
+        try:
+            rows=subprocess.check_output(['nvidia-smi','--query-gpu=name,utilization.gpu,temperature.gpu','--format=csv,noheader,nounits'],text=True,timeout=3)
+            for line in rows.splitlines():
+                name,usage,temp=line.rsplit(',',2);gpus.append({'name':name,'usage':float(usage),'temperature':float(temp)})
+        except (ValueError,subprocess.SubprocessError):pass
+    return {'cpu':cpu,'cpuTemp':max(temps) if temps else None,'gpus':gpus,'memoryUsed':mem['MemTotal']-mem['MemAvailable'],'memoryTotal':mem['MemTotal'],'diskUsed':disk.used,'diskTotal':disk.total,'diskFree':disk.free,'uptime':int(float(pathlib.Path('/proc/uptime').read_text().split()[0])),'sampledAt':time.time()}
+def location_search(city):
+    if not 2<=len(city)<=100:raise ValueError('Bitte einen Ort eingeben / Enter a city')
+    data=fetch('https://geocoding-api.open-meteo.com/v1/search',{'name':city,'count':5,'language':'en','format':'json'})
+    return {'locations':[{'name':', '.join(filter(None,[r['name'],r.get('admin1'),r.get('country')])),'latitude':r['latitude'],'longitude':r['longitude']} for r in data.get('results',[])]}
+def weather():
+    loc=read(CONFIG/'weather-location.json')
+    if not loc:return {'locationRequired':True}
+    cached=read(CACHE/'weather.json',{})
+    if cached.get('location')==loc and time.time()-cached.get('fetchedAt',0)<900:return cached
+    try:
+        data=fetch('https://api.open-meteo.com/v1/forecast',{'latitude':loc['latitude'],'longitude':loc['longitude'],'current':'temperature_2m,apparent_temperature,weather_code,wind_speed_10m','daily':'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max','forecast_days':5,'timezone':'auto'})
+        data.update(location=loc,fetchedAt=time.time(),stale=False);save(CACHE/'weather.json',data);return data
+    except Exception:
+        if cached.get('location')==loc:return dict(cached,stale=True)
+        raise
+
+def window(used,reset):
+    if not isinstance(used,(int,float)) or not math.isfinite(used) or used<0:return None
+    if not isinstance(reset,(int,float)) or not math.isfinite(reset) or reset<=time.time():return None
+    return {'used':used,'reset':reset}
+def import_claude():
+    raw=json.load(sys.stdin).get('rate_limits') or {}
+    data={'source':'Claude Code status line','sampledAt':time.time()}
+    for key in ['five_hour','seven_day']:
+        value=raw.get(key) or {};data[key]=window(value.get('used_percentage'),value.get('resets_at'))
+    save(CACHE/'claude.json',data)
+    return {'ok':True}
+def codex_limits():
+    cached=read(CACHE/'codex.json',{})
+    if time.time()-cached.get('sampledAt',0)<60:return cached
+    if not shutil.which('codex'):return {'connected':False}
+    # Official read-only app-server RPC; never starts a model turn or reads auth files.
+    p=subprocess.Popen(['codex','app-server'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+    sel=selectors.DefaultSelector();sel.register(p.stdout,selectors.EVENT_READ)
+    buf=b'';deadline=time.monotonic()+12
+    def send(data):p.stdin.write((json.dumps(data)+'\n').encode());p.stdin.flush()
+    try:
+        send({'id':1,'method':'initialize','params':{'clientInfo':{'name':'nyrix-island','version':'0.1'}}})
+        while time.monotonic()<deadline:
+            if not sel.select(.5):continue
+            chunk=os.read(p.stdout.fileno(),65536)
+            if not chunk:break
+            buf+=chunk
+            while b'\n' in buf:
+                line,buf=buf.split(b'\n',1)
+                try:reply=json.loads(line)
+                except ValueError:continue
+                if reply.get('id')==1:
+                    if 'error' in reply:raise RuntimeError('Codex initialization failed')
+                    send({'method':'initialized'});send({'id':2,'method':'account/rateLimits/read'})
+                elif reply.get('id')==2:
+                    if 'error' in reply:return {'connected':False}
+                    result=reply.get('result',{});rate=(result.get('rateLimitsByLimitId') or {}).get('codex') or result.get('rateLimits') or {}
+                    data={'connected':True,'source':'ChatGPT / Codex','sampledAt':time.time(),'five_hour':None,'seven_day':None}
+                    for value in [rate.get('primary'),rate.get('secondary')]:
+                        if not value:continue
+                        key={300:'five_hour',10080:'seven_day'}.get(value.get('windowDurationMins'))
+                        if key:data[key]=window(value.get('usedPercent'),value.get('resetsAt'))
+                    save(CACHE/'codex.json',data);return data
+        return {'connected':False,'error':'Codex timeout'}
+    finally:
+        sel.close();p.terminate()
+        try:p.wait(timeout=2)
+        except subprocess.TimeoutExpired:p.kill();p.wait()
+def ai():
+    claude=read(CACHE/'claude.json',{})
+    for key in ['five_hour','seven_day']:
+        value=claude.get(key)
+        if value and value.get('reset',0)<=time.time():claude[key]=None
+    claude['connected']=bool(claude.get('sampledAt'))
+    claude['stale']=time.time()-claude.get('sampledAt',0)>900
+    codex=codex_limits()
+    for account in (claude,codex):
+        for key in ['five_hour','seven_day']:
+            value=account.get(key)
+            if value and value.get('reset',0)<=time.time():account[key]=None
+    return {'claude':claude,'codex':codex}
+def main():
+    command=sys.argv[1]
+    if command=='metrics':return metrics()
+    if command=='weather':return weather()
+    if command=='search':return location_search(sys.argv[2])
+    if command=='location':
+        lat,lon=map(float,sys.argv[2:4]);name=sys.argv[4][:180]
+        if not (-90<=lat<=90 and -180<=lon<=180):raise ValueError('Invalid coordinates')
+        save(CONFIG/'weather-location.json',{'latitude':lat,'longitude':lon,'name':name});return weather()
+    if command=='ai':return ai()
+    if command=='claude-import':return import_claude()
+    raise ValueError('Unknown command')
+if __name__=='__main__':
+    try:print(json.dumps(main(),ensure_ascii=False))
+    except Exception as e:print(json.dumps({'error':str(e)},ensure_ascii=False));sys.exit(1)

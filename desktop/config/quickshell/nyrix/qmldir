@@ -1,0 +1,15 @@
+singleton I18n 1.0 I18n.qml
+SettingsWindow 1.0 SettingsWindow.qml
+StatusContent 1.0 StatusContent.qml
+StatusMenus 1.0 StatusMenus.qml
+UpdatesPage 1.0 UpdatesPage.qml
+ActionButton 1.0 ActionButton.qml
+Wallpaper 1.0 Wallpaper.qml
+LevelSlider 1.0 LevelSlider.qml
+ToggleSwitch 1.0 ToggleSwitch.qml
+ShortcutsPage 1.0 ShortcutsPage.qml
+SettingsCard 1.0 SettingsCard.qml
+SettingsButton 1.0 SettingsButton.qml
+DynamicIsland 1.0 DynamicIsland.qml
+IslandCalendar 1.0 IslandCalendar.qml
+IslandMeter 1.0 IslandMeter.qml

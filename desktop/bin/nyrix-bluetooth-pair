@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# A real interactive BlueZ agent handles PIN/passkey confirmations; never auto-accept.
+set -euo pipefail
+[[ ${1:-} =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]] || exit 2
+printf 'Bluetooth-Kopplung für %s\n\nIm folgenden Dialog:\n  agent KeyboardDisplay\n  default-agent\n  pair %s\n  connect %s\n\nPIN/Bestätigung nur für dein Gerät akzeptieren. Mit quit schließen.\n\n' "$1" "$1" "$1"
+exec bluetoothctl

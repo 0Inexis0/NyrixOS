@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import json, os, pathlib, sys, subprocess
+home=pathlib.Path.home()
+langfile=home/'.config/nyrix/language'
+lang=langfile.read_text().strip() if langfile.exists() else 'de'
+config=json.loads((home/'.config/waybar/config.jsonc').read_text())
+translations={'NyrixOS · Terminal öffnen':'NyrixOS · Open terminal','Nicht verbunden':'Not connected','Lautstärke {volume}%':'Volume {volume}%','Akku {capacity}% · {timeTo}':'Battery {capacity}% · {timeTo}','Kontrollzentrum · Super+C':'Control center · Super+C'}
+def translate(obj):
+    if isinstance(obj,dict): return {k:translate(v) for k,v in obj.items()}
+    if isinstance(obj,list): return [translate(v) for v in obj]
+    return translations.get(obj,obj) if isinstance(obj,str) and lang=='en' else obj
+config=translate(config)
+config['clock']['locale']='en_US.UTF-8' if lang=='en' else 'de_DE.UTF-8'
+path=pathlib.Path(os.environ['XDG_RUNTIME_DIR'])/'nyrix-waybar.json'
+path.write_text(json.dumps(config))
+if '--render' not in sys.argv:
+    # Remote/manual restarts may lack the compositor instance environment.
+    # Resolve only the instance belonging to this exact Wayland display.
+    instances = json.loads(subprocess.check_output(['hyprctl', 'instances', '-j'], text=True, timeout=5))
+    matches = [i for i in instances if i.get('wl_socket') == os.environ.get('WAYLAND_DISPLAY')]
+    if len(matches) != 1:
+        sys.exit('Cannot identify the current Hyprland session; refusing a broken bar startup.')
+    os.environ['HYPRLAND_INSTANCE_SIGNATURE'] = matches[0]['instance']
+    os.execvp('waybar',['waybar','-c',str(path),'-s',str(home/'.config/waybar/style.css')])

@@ -1,0 +1,2 @@
+# Disposable live environment, not an installed-system policy.
+nyrix ALL=(ALL:ALL) NOPASSWD: ALL

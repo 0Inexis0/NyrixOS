@@ -1,0 +1,110 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 36,
+  "margin-top": 10,
+  "margin-left": 12,
+  "margin-right": 12,
+  "spacing": 8,
+  "modules-left": [
+    "custom/nyrix",
+    "group/workspace"
+  ],
+  "modules-center": [],
+  "modules-right": [
+    "tray",
+    "group/status"
+  ],
+  "custom/nyrix": {
+    "format": " ",
+    "tooltip-format": "NyrixOS · Terminal öffnen",
+    "on-click": "foot"
+  },
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "on-click": "activate",
+    "persistent-workspaces": {
+      "*": 3
+    }
+  },
+  "hyprland/window": {
+    "max-length": 28,
+    "separate-outputs": true
+  },
+  "clock": {
+    "format": "{:%H:%M}",
+    "tooltip-format": "{:%A, %d. %B %Y}",
+    "on-click": "nyrix-controls island"
+  },
+  "tray": {
+    "spacing": 10,
+    "icon-size": 16
+  },
+  "network": {
+    "format-ethernet": " ",
+    "format-wifi": " ",
+    "format-disconnected": " ",
+    "tooltip-format": "{ifname} · {ipaddr}",
+    "on-click": "nyrix-controls network",
+    "format-linked": " ",
+    "tooltip-format-ethernet": "LAN · {ifname} · {ipaddr}",
+    "tooltip-format-wifi": "{essid} · {signalStrength}% · {ipaddr}",
+    "tooltip-format-disconnected": "Nicht verbunden"
+  },
+  "pulseaudio": {
+    "format": " ",
+    "format-muted": " ",
+    "on-click": "nyrix-controls volume",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "scroll-step": 5,
+    "tooltip-format": "Lautstärke {volume}%"
+  },
+  "battery": {
+    "format": " ",
+    "format-charging": " ",
+    "states": {
+      "warning": 25,
+      "critical": 10
+    },
+    "format-plugged": " ",
+    "tooltip-format": "Akku {capacity}% · {timeTo}",
+    "on-click": "nyrix-controls"
+  },
+  "custom/controls": {
+    "format": " ",
+    "tooltip-format": "Kontrollzentrum · Super+C",
+    "on-click": "nyrix-controls"
+  },
+  "group/status": {
+    "orientation": "horizontal",
+    "modules": [
+      "network",
+      "custom/wifi",
+      "custom/bluetooth",
+      "pulseaudio",
+      "battery",
+      "custom/controls"
+    ]
+  },
+  "custom/wifi": {
+    "exec": "nyrix-radio-status wifi",
+    "return-type": "json",
+    "interval": 5,
+    "format": "{}",
+    "on-click": "nyrix-controls wifi"
+  },
+  "custom/bluetooth": {
+    "exec": "nyrix-radio-status bluetooth",
+    "return-type": "json",
+    "interval": 5,
+    "format": "{}",
+    "on-click": "nyrix-controls bluetooth"
+  },
+  "group/workspace": {
+    "orientation": "horizontal",
+    "modules": [
+      "hyprland/workspaces",
+      "hyprland/window"
+    ]
+  }
+}

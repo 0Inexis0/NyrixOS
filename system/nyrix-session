@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Read only an allowlisted locale, never source user shell code.
+if [[ -r $HOME/.config/nyrix/locale ]]; then
+    read -r nyrix_locale < "$HOME/.config/nyrix/locale"
+    case $nyrix_locale in LANG=de_DE.UTF-8|LANG=en_US.UTF-8) export "$nyrix_locale" ;; esac
+else
+    export LANG=de_DE.UTF-8
+fi
+export XDG_CURRENT_DESKTOP=Hyprland
+export XDG_SESSION_DESKTOP=Hyprland
+export XDG_SESSION_TYPE=wayland
+export XCURSOR_THEME=Breeze_Light
+export XCURSOR_SIZE=24
+# Software rendering only for virtual machines; real hardware keeps its GPU.
+if systemd-detect-virt --vm --quiet; then
+    export LIBGL_ALWAYS_SOFTWARE=1
+fi
+exec dbus-run-session start-hyprland
