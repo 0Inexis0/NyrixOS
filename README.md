@@ -14,6 +14,32 @@
 
 </div>
 
+## Screenshots
+
+Actual captures from the installed development VM on **2026-11-18**, not mockups.
+These show the current desktop source, not the older downloadable/build-tested ISO.
+
+![NyrixOS desktop with floating Waybar pills and default wallpaper](docs/screenshots/desktop-current.png)
+
+<details>
+<summary>Settings, Dynamic Island and control center</summary>
+
+### Settings
+
+![NyrixOS settings with profile sidebar and network cards](docs/screenshots/settings-current.png)
+
+### Dynamic Island
+
+![Expanded Dynamic Island showing the local calendar](docs/screenshots/island-current.png)
+
+### Control center
+
+![Compact control center with radio switches and brightness/volume sliders](docs/screenshots/control-center-current.png)
+
+</details>
+
+[Capture details and historical screenshots](docs/screenshots/README.md)
+
 ## Project status
 
 NyrixOS is an early-development **Arch Linux + Hyprland** distribution with a
